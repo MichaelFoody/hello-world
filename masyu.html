@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Masyu - Pearl Puzzle</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            color: #fff;
+        }
+
+        h1 {
+            margin: 0 0 10px 0;
+            font-size: 2.5em;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .subtitle {
+            color: #888;
+            margin-bottom: 20px;
+            text-align: center;
+            max-width: 500px;
+            font-size: 0.9em;
+        }
+
+        .controls {
+            display: flex;
+            gap: 15px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-secondary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(245, 87, 108, 0.4);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+            color: white;
+        }
+
+        .btn-success:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 15px rgba(56, 239, 125, 0.4);
+        }
+
+        select {
+            padding: 12px 20px;
+            font-size: 1em;
+            border: none;
+            border-radius: 8px;
+            background: #2a2a4a;
+            color: white;
+            cursor: pointer;
+        }
+
+        .stats {
+            display: flex;
+            gap: 30px;
+            margin-bottom: 20px;
+            font-size: 1.2em;
+        }
+
+        .stat {
+            background: rgba(255,255,255,0.1);
+            padding: 10px 20px;
+            border-radius: 8px;
+        }
+
+        .stat-label {
+            color: #888;
+            font-size: 0.8em;
+        }
+
+        .stat-value {
+            font-weight: bold;
+            font-size: 1.3em;
+        }
+
+        #game-container {
+            background: #f5f5dc;
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+        }
+
+        #game-board {
+            position: relative;
+            cursor: crosshair;
+        }
+
+        .grid-line {
+            position: absolute;
+            background: #ddd;
+        }
+
+        .grid-line.horizontal {
+            height: 1px;
+        }
+
+        .grid-line.vertical {
+            width: 1px;
+        }
+
+        .cell {
+            position: absolute;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .pearl {
+            border-radius: 50%;
+            position: absolute;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        .pearl.black {
+            background: radial-gradient(circle at 30% 30%, #555, #000);
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .pearl.white {
+            background: radial-gradient(circle at 30% 30%, #fff, #ccc);
+            border: 2px solid #333;
+            box-shadow: 2px 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .edge {
+            position: absolute;
+            z-index: 5;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+
+        .edge.horizontal {
+            height: 12px;
+        }
+
+        .edge.vertical {
+            width: 12px;
+        }
+
+        .edge:hover {
+            background: rgba(102, 126, 234, 0.3);
+            border-radius: 4px;
+        }
+
+        .edge.active {
+            background: #333;
+            border-radius: 4px;
+        }
+
+        .edge.active:hover {
+            background: #555;
+        }
+
+        .node {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            background: #999;
+            border-radius: 50%;
+            z-index: 15;
+            pointer-events: none;
+        }
+
+        .rules {
+            margin-top: 20px;
+            background: rgba(255,255,255,0.1);
+            padding: 20px;
+            border-radius: 12px;
+            max-width: 500px;
+        }
+
+        .rules h3 {
+            margin-top: 0;
+            color: #667eea;
+        }
+
+        .rules ul {
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+
+        .rule-pearl {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            vertical-align: middle;
+            margin: 0 3px;
+        }
+
+        .rule-pearl.black {
+            background: radial-gradient(circle at 30% 30%, #555, #000);
+        }
+
+        .rule-pearl.white {
+            background: radial-gradient(circle at 30% 30%, #fff, #ccc);
+            border: 2px solid #333;
+        }
+
+        .message {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 40px 60px;
+            border-radius: 20px;
+            font-size: 1.5em;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+            z-index: 100;
+            display: none;
+        }
+
+        .message.show {
+            display: block;
+            animation: popIn 0.3s ease-out;
+        }
+
+        @keyframes popIn {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 0; }
+            100% { transform: translate(-50%, -50%) scale(1); opacity: 1; }
+        }
+
+        .message h2 {
+            margin: 0 0 10px 0;
+            color: #38ef7d;
+        }
+
+        .message p {
+            margin: 0;
+        }
+    </style>
+</head>
+<body>
+    <h1>🔮 Masyu</h1>
+    <p class="subtitle">Draw a single loop through all pearls. Click edges between grid points to draw lines.</p>
+
+    <div class="controls">
+        <select id="size-select">
+            <option value="5">5×5 (Easy)</option>
+            <option value="7" selected>7×7 (Medium)</option>
+            <option value="10">10×10 (Hard)</option>
+        </select>
+        <button class="btn-primary" onclick="newGame()">New Puzzle</button>
+        <button class="btn-secondary" onclick="clearBoard()">Clear</button>
+        <button class="btn-success" onclick="checkSolution()">Check Solution</button>
+    </div>
+
+    <div class="stats">
+        <div class="stat">
+            <div class="stat-label">Time</div>
+            <div class="stat-value" id="timer">00:00</div>
+        </div>
+        <div class="stat">
+            <div class="stat-label">Pearls</div>
+            <div class="stat-value" id="pearl-count">0</div>
+        </div>
+    </div>
+
+    <div id="game-container">
+        <div id="game-board"></div>
+    </div>
+
+    <div class="rules">
+        <h3>Rules</h3>
+        <ul>
+            <li>Draw a single continuous loop that doesn't cross itself</li>
+            <li>The loop must pass through every pearl</li>
+            <li><span class="rule-pearl black"></span> <strong>Black pearls:</strong> Loop must turn 90° ON the pearl, and go straight through both adjacent cells</li>
+            <li><span class="rule-pearl white"></span> <strong>White pearls:</strong> Loop must go straight through the pearl, but must turn on at least one adjacent cell</li>
+        </ul>
+    </div>
+
+    <div class="message" id="message">
+        <h2>🎉 Congratulations!</h2>
+        <p>You solved it in <span id="final-time"></span>!</p>
+    </div>
+
+    <script>
+        const CELL_SIZE = 50;
+        const PEARL_SIZE = 24;
+        const EDGE_THICKNESS = 6;
+
+        let gridSize = 7;
+        let pearls = []; // {row, col, type: 'black' | 'white'}
+        let edges = {}; // key: "r1,c1-r2,c2" -> true/false
+        let timerInterval = null;
+        let startTime = null;
+        let gameWon = false;
+
+        function init() {
+            newGame();
+        }
+
+        function newGame() {
+            gridSize = parseInt(document.getElementById('size-select').value);
+            gameWon = false;
+            document.getElementById('message').classList.remove('show');
+            generatePuzzle();
+            renderBoard();
+            startTimer();
+        }
+
+        function generatePuzzle() {
+            pearls = [];
+            edges = {};
+
+            // Generate a valid loop first, then place pearls on it
+            const loop = generateRandomLoop();
+
+            if (loop && loop.length > 0) {
+                placePearlsOnLoop(loop);
+            } else {
+                // Fallback: place random pearls
+                placeRandomPearls();
+            }
+
+            document.getElementById('pearl-count').textContent = pearls.length;
+        }
+
+        function generateRandomLoop() {
+            // Create a simple loop by starting from a random path
+            // We'll use a simplified approach: create a rectangular-ish loop with some variations
+
+            const margin = 1;
+            const maxRow = gridSize - 1 - margin;
+            const maxCol = gridSize - 1 - margin;
+
+            if (maxRow < 2 || maxCol < 2) {
+                return generateSimpleLoop();
+            }
+
+            // Start with a basic rectangular loop
+            let loop = [];
+            const startRow = margin;
+            const startCol = margin;
+            const endRow = maxRow;
+            const endCol = maxCol;
+
+            // Top edge
+            for (let c = startCol; c <= endCol; c++) {
+                loop.push({row: startRow, col: c});
+            }
+            // Right edge
+            for (let r = startRow + 1; r <= endRow; r++) {
+                loop.push({row: r, col: endCol});
+            }
+            // Bottom edge
+            for (let c = endCol - 1; c >= startCol; c--) {
+                loop.push({row: endRow, col: c});
+            }
+            // Left edge
+            for (let r = endRow - 1; r > startRow; r--) {
+                loop.push({row: r, col: startCol});
+            }
+
+            // Add some random indentations to make it more interesting
+            loop = addLoopVariations(loop);
+
+            return loop;
+        }
+
+        function generateSimpleLoop() {
+            // For very small grids
+            let loop = [];
+            const s = Math.floor(gridSize / 2) - 1;
+            const e = Math.floor(gridSize / 2) + 1;
+
+            for (let c = s; c <= e; c++) loop.push({row: s, col: c});
+            for (let r = s + 1; r <= e; r++) loop.push({row: r, col: e});
+            for (let c = e - 1; c >= s; c--) loop.push({row: e, col: c});
+            for (let r = e - 1; r > s; r--) loop.push({row: r, col: s});
+
+            return loop;
+        }
+
+        function addLoopVariations(loop) {
+            // Add random bumps to the loop
+            const numVariations = Math.floor(gridSize / 2);
+
+            for (let v = 0; v < numVariations; v++) {
+                if (Math.random() < 0.5) continue;
+
+                // Try to add a bump at a random straight section
+                const idx = Math.floor(Math.random() * (loop.length - 2)) + 1;
+                const prev = loop[idx - 1];
+                const curr = loop[idx];
+                const next = loop[(idx + 1) % loop.length];
+
+                // Check if this is a straight section
+                const isHorizontal = prev.row === curr.row && curr.row === next.row;
+                const isVertical = prev.col === curr.col && curr.col === next.col;
+
+                if (isHorizontal) {
+                    // Try to add a vertical bump
+                    const bumpDir = Math.random() < 0.5 ? -1 : 1;
+                    const newRow = curr.row + bumpDir;
+
+                    if (newRow >= 0 && newRow < gridSize && !loopContains(loop, newRow, curr.col)) {
+                        // Insert bump
+                        loop.splice(idx, 1,
+                            {row: curr.row, col: curr.col},
+                            {row: newRow, col: curr.col},
+                            {row: newRow, col: next.col},
+                            {row: next.row, col: next.col}
+                        );
+                        loop.splice(idx + 4, 1); // Remove the original next
+                    }
+                } else if (isVertical) {
+                    // Try to add a horizontal bump
+                    const bumpDir = Math.random() < 0.5 ? -1 : 1;
+                    const newCol = curr.col + bumpDir;
+
+                    if (newCol >= 0 && newCol < gridSize && !loopContains(loop, curr.row, newCol)) {
+                        loop.splice(idx, 1,
+                            {row: curr.row, col: curr.col},
+                            {row: curr.row, col: newCol},
+                            {row: next.row, col: newCol},
+                            {row: next.row, col: next.col}
+                        );
+                        loop.splice(idx + 4, 1);
+                    }
+                }
+            }
+
+            return loop;
+        }
+
+        function loopContains(loop, row, col) {
+            return loop.some(p => p.row === row && p.col === col);
+        }
+
+        function placePearlsOnLoop(loop) {
+            // Analyze each point on the loop and potentially place a pearl
+            const pearlDensity = 0.35 + Math.random() * 0.15;
+            const numPearls = Math.max(3, Math.floor(loop.length * pearlDensity));
+
+            // Identify corners and straights
+            const corners = [];
+            const straights = [];
+
+            for (let i = 0; i < loop.length; i++) {
+                const prev = loop[(i - 1 + loop.length) % loop.length];
+                const curr = loop[i];
+                const next = loop[(i + 1) % loop.length];
+
+                const isCorner = (prev.row !== next.row) && (prev.col !== next.col);
+
+                if (isCorner) {
+                    corners.push(i);
+                } else {
+                    straights.push(i);
+                }
+            }
+
+            // Place black pearls at some corners (need straight segments on both sides)
+            const usedIndices = new Set();
+            let placedPearls = 0;
+
+            // Shuffle corners
+            shuffleArray(corners);
+
+            for (const idx of corners) {
+                if (placedPearls >= numPearls) break;
+                if (usedIndices.has(idx)) continue;
+
+                const prev = loop[(idx - 1 + loop.length) % loop.length];
+                const curr = loop[idx];
+                const next = loop[(idx + 1) % loop.length];
+                const prevPrev = loop[(idx - 2 + loop.length) % loop.length];
+                const nextNext = loop[(idx + 2) % loop.length];
+
+                // For black pearl: need straight on both sides
+                const prevStraight = prevPrev.row === prev.row && prev.row === curr.row ||
+                                    prevPrev.col === prev.col && prev.col === curr.col;
+                const nextStraight = curr.row === next.row && next.row === nextNext.row ||
+                                    curr.col === next.col && next.col === nextNext.col;
+
+                // Simplified check - just place if it's a corner
+                if (Math.random() < 0.7) {
+                    pearls.push({row: curr.row, col: curr.col, type: 'black'});
+                    usedIndices.add(idx);
+                    usedIndices.add((idx - 1 + loop.length) % loop.length);
+                    usedIndices.add((idx + 1) % loop.length);
+                    placedPearls++;
+                }
+            }
+
+            // Place white pearls at some straight sections (need turn on at least one side)
+            shuffleArray(straights);
+
+            for (const idx of straights) {
+                if (placedPearls >= numPearls) break;
+                if (usedIndices.has(idx)) continue;
+
+                const prevIdx = (idx - 1 + loop.length) % loop.length;
+                const nextIdx = (idx + 1) % loop.length;
+
+                // Check if there's a turn on either adjacent cell
+                const prevPrev = loop[(idx - 2 + loop.length) % loop.length];
+                const prev = loop[prevIdx];
+                const curr = loop[idx];
+                const next = loop[nextIdx];
+                const nextNext = loop[(idx + 2) % loop.length];
+
+                const prevIsTurn = (prevPrev.row !== prev.row || prev.row !== curr.row) &&
+                                   (prevPrev.col !== prev.col || prev.col !== curr.col);
+                const nextIsTurn = (curr.row !== next.row || next.row !== nextNext.row) &&
+                                   (curr.col !== next.col || next.col !== nextNext.col);
+
+                if ((prevIsTurn || nextIsTurn) && Math.random() < 0.6) {
+                    pearls.push({row: curr.row, col: curr.col, type: 'white'});
+                    usedIndices.add(idx);
+                    placedPearls++;
+                }
+            }
+        }
+
+        function placeRandomPearls() {
+            const numPearls = Math.floor(gridSize * gridSize * 0.15) + 2;
+            const positions = [];
+
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    positions.push({row: r, col: c});
+                }
+            }
+
+            shuffleArray(positions);
+
+            for (let i = 0; i < numPearls && i < positions.length; i++) {
+                const pos = positions[i];
+                pearls.push({
+                    row: pos.row,
+                    col: pos.col,
+                    type: Math.random() < 0.5 ? 'black' : 'white'
+                });
+            }
+        }
+
+        function shuffleArray(arr) {
+            for (let i = arr.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [arr[i], arr[j]] = [arr[j], arr[i]];
+            }
+        }
+
+        function renderBoard() {
+            const board = document.getElementById('game-board');
+            const width = gridSize * CELL_SIZE;
+            const height = gridSize * CELL_SIZE;
+
+            board.style.width = width + 'px';
+            board.style.height = height + 'px';
+            board.innerHTML = '';
+
+            // Draw grid lines
+            for (let i = 0; i < gridSize; i++) {
+                // Horizontal lines
+                const hLine = document.createElement('div');
+                hLine.className = 'grid-line horizontal';
+                hLine.style.top = (i * CELL_SIZE) + 'px';
+                hLine.style.left = '0';
+                hLine.style.width = width + 'px';
+                board.appendChild(hLine);
+
+                // Vertical lines
+                const vLine = document.createElement('div');
+                vLine.className = 'grid-line vertical';
+                vLine.style.left = (i * CELL_SIZE) + 'px';
+                vLine.style.top = '0';
+                vLine.style.height = height + 'px';
+                board.appendChild(vLine);
+            }
+
+            // Add clickable edges between nodes
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    // Horizontal edge (to the right)
+                    if (c < gridSize - 1) {
+                        const edge = document.createElement('div');
+                        edge.className = 'edge horizontal';
+                        edge.style.left = (c * CELL_SIZE + 4) + 'px';
+                        edge.style.top = (r * CELL_SIZE - 6) + 'px';
+                        edge.style.width = (CELL_SIZE - 8) + 'px';
+                        edge.dataset.r1 = r;
+                        edge.dataset.c1 = c;
+                        edge.dataset.r2 = r;
+                        edge.dataset.c2 = c + 1;
+                        edge.onclick = () => toggleEdge(r, c, r, c + 1, edge);
+                        board.appendChild(edge);
+                    }
+
+                    // Vertical edge (downward)
+                    if (r < gridSize - 1) {
+                        const edge = document.createElement('div');
+                        edge.className = 'edge vertical';
+                        edge.style.left = (c * CELL_SIZE - 6) + 'px';
+                        edge.style.top = (r * CELL_SIZE + 4) + 'px';
+                        edge.style.height = (CELL_SIZE - 8) + 'px';
+                        edge.dataset.r1 = r;
+                        edge.dataset.c1 = c;
+                        edge.dataset.r2 = r + 1;
+                        edge.dataset.c2 = c;
+                        edge.onclick = () => toggleEdge(r, c, r + 1, c, edge);
+                        board.appendChild(edge);
+                    }
+                }
+            }
+
+            // Draw grid nodes
+            for (let r = 0; r < gridSize; r++) {
+                for (let c = 0; c < gridSize; c++) {
+                    const node = document.createElement('div');
+                    node.className = 'node';
+                    node.style.left = (c * CELL_SIZE - 4) + 'px';
+                    node.style.top = (r * CELL_SIZE - 4) + 'px';
+                    board.appendChild(node);
+                }
+            }
+
+            // Draw pearls
+            for (const pearl of pearls) {
+                const elem = document.createElement('div');
+                elem.className = `pearl ${pearl.type}`;
+                elem.style.width = PEARL_SIZE + 'px';
+                elem.style.height = PEARL_SIZE + 'px';
+                elem.style.left = (pearl.col * CELL_SIZE - PEARL_SIZE/2) + 'px';
+                elem.style.top = (pearl.row * CELL_SIZE - PEARL_SIZE/2) + 'px';
+                board.appendChild(elem);
+            }
+        }
+
+        function getEdgeKey(r1, c1, r2, c2) {
+            // Normalize the key so (r1,c1)-(r2,c2) is same as (r2,c2)-(r1,c1)
+            if (r1 < r2 || (r1 === r2 && c1 < c2)) {
+                return `${r1},${c1}-${r2},${c2}`;
+            }
+            return `${r2},${c2}-${r1},${c1}`;
+        }
+
+        function toggleEdge(r1, c1, r2, c2, element) {
+            if (gameWon) return;
+
+            const key = getEdgeKey(r1, c1, r2, c2);
+            edges[key] = !edges[key];
+
+            if (edges[key]) {
+                element.classList.add('active');
+            } else {
+                element.classList.remove('active');
+            }
+        }
+
+        function clearBoard() {
+            edges = {};
+            const edgeElements = document.querySelectorAll('.edge');
+            edgeElements.forEach(e => e.classList.remove('active'));
+
+            if (gameWon) {
+                gameWon = false;
+                document.getElementById('message').classList.remove('show');
+                startTimer();
+            }
+        }
+
+        function getConnectedEdges(row, col) {
+            // Returns all active edges connected to this node
+            const connected = [];
+
+            // Check all 4 directions
+            const directions = [
+                {dr: -1, dc: 0}, // up
+                {dr: 1, dc: 0},  // down
+                {dr: 0, dc: -1}, // left
+                {dr: 0, dc: 1}   // right
+            ];
+
+            for (const dir of directions) {
+                const nr = row + dir.dr;
+                const nc = col + dir.dc;
+
+                if (nr >= 0 && nr < gridSize && nc >= 0 && nc < gridSize) {
+                    const key = getEdgeKey(row, col, nr, nc);
+                    if (edges[key]) {
+                        connected.push({row: nr, col: nc, dr: dir.dr, dc: dir.dc});
+                    }
+                }
+            }
+
+            return connected;
+        }
+
+        function checkSolution() {
+            const result = validateSolution();
+
+            if (result.valid) {
+                gameWon = true;
+                stopTimer();
+                document.getElementById('final-time').textContent = document.getElementById('timer').textContent;
+                document.getElementById('message').classList.add('show');
+            } else {
+                alert(result.message || 'Not quite right. Keep trying!');
+            }
+        }
+
+        function validateSolution() {
+            // Check 1: Every node with edges must have exactly 2 edges (forms a loop)
+            const nodeEdgeCounts = {};
+
+            for (const key in edges) {
+                if (!edges[key]) continue;
+
+                const [part1, part2] = key.split('-');
+                const [r1, c1] = part1.split(',').map(Number);
+                const [r2, c2] = part2.split(',').map(Number);
+
+                const key1 = `${r1},${c1}`;
+                const key2 = `${r2},${c2}`;
+
+                nodeEdgeCounts[key1] = (nodeEdgeCounts[key1] || 0) + 1;
+                nodeEdgeCounts[key2] = (nodeEdgeCounts[key2] || 0) + 1;
+            }
+
+            // Check that all nodes with edges have exactly 2
+            for (const key in nodeEdgeCounts) {
+                if (nodeEdgeCounts[key] !== 2) {
+                    return {valid: false, message: 'Lines must form a continuous loop (each point needs exactly 2 connections or none)'};
+                }
+            }
+
+            // Check that there are some edges
+            const activeEdgeCount = Object.values(edges).filter(v => v).length;
+            if (activeEdgeCount === 0) {
+                return {valid: false, message: 'Draw some lines first!'};
+            }
+
+            // Check 2: It's a single connected loop
+            const nodesInLoop = Object.keys(nodeEdgeCounts);
+            if (nodesInLoop.length === 0) {
+                return {valid: false, message: 'No loop found'};
+            }
+
+            // Trace the loop starting from any node
+            const startNode = nodesInLoop[0];
+            const [startR, startC] = startNode.split(',').map(Number);
+            const visited = new Set();
+            let current = {row: startR, col: startC};
+            let prev = null;
+
+            while (true) {
+                const key = `${current.row},${current.col}`;
+
+                if (visited.has(key)) {
+                    // We've completed the loop
+                    break;
+                }
+
+                visited.add(key);
+                const connected = getConnectedEdges(current.row, current.col);
+
+                // Find next node (not the one we came from)
+                let next = null;
+                for (const conn of connected) {
+                    if (!prev || conn.row !== prev.row || conn.col !== prev.col) {
+                        next = conn;
+                        break;
+                    }
+                }
+
+                if (!next) break;
+
+                prev = current;
+                current = {row: next.row, col: next.col};
+            }
+
+            if (visited.size !== nodesInLoop.length) {
+                return {valid: false, message: 'Lines must form a single continuous loop'};
+            }
+
+            // Check 3: All pearls are on the loop
+            for (const pearl of pearls) {
+                const key = `${pearl.row},${pearl.col}`;
+                if (!visited.has(key)) {
+                    return {valid: false, message: 'The loop must pass through all pearls'};
+                }
+            }
+
+            // Check 4: Pearl rules
+            for (const pearl of pearls) {
+                const connected = getConnectedEdges(pearl.row, pearl.col);
+
+                if (connected.length !== 2) {
+                    return {valid: false, message: 'Loop must pass through each pearl'};
+                }
+
+                const dir1 = connected[0];
+                const dir2 = connected[1];
+
+                // Check if it's a turn (90 degree) or straight
+                const isTurn = (dir1.dr !== -dir2.dr) || (dir1.dc !== -dir2.dc);
+
+                if (pearl.type === 'black') {
+                    // Black pearl: must turn, and must go straight on both sides
+                    if (!isTurn) {
+                        return {valid: false, message: 'Black pearls must have a 90° turn'};
+                    }
+
+                    // Check that both adjacent cells continue straight
+                    for (const dir of [dir1, dir2]) {
+                        const adjRow = pearl.row + dir.dr;
+                        const adjCol = pearl.col + dir.dc;
+                        const nextRow = adjRow + dir.dr;
+                        const nextCol = adjCol + dir.dc;
+
+                        if (nextRow < 0 || nextRow >= gridSize || nextCol < 0 || nextCol >= gridSize) {
+                            return {valid: false, message: 'Black pearls must have straight segments on both sides'};
+                        }
+
+                        const edgeKey = getEdgeKey(adjRow, adjCol, nextRow, nextCol);
+                        if (!edges[edgeKey]) {
+                            return {valid: false, message: 'Black pearls must have straight segments extending from both sides'};
+                        }
+                    }
+                } else {
+                    // White pearl: must go straight, and must turn on at least one adjacent cell
+                    if (isTurn) {
+                        return {valid: false, message: 'White pearls must have the line go straight through'};
+                    }
+
+                    // Check that at least one adjacent cell has a turn
+                    let hasTurn = false;
+
+                    for (const dir of [dir1, dir2]) {
+                        const adjRow = pearl.row + dir.dr;
+                        const adjCol = pearl.col + dir.dc;
+                        const adjConnected = getConnectedEdges(adjRow, adjCol);
+
+                        if (adjConnected.length === 2) {
+                            const adjDir1 = adjConnected[0];
+                            const adjDir2 = adjConnected[1];
+                            const adjIsTurn = (adjDir1.dr !== -adjDir2.dr) || (adjDir1.dc !== -adjDir2.dc);
+                            if (adjIsTurn) {
+                                hasTurn = true;
+                                break;
+                            }
+                        }
+                    }
+
+                    if (!hasTurn) {
+                        return {valid: false, message: 'White pearls must have a turn on at least one adjacent cell'};
+                    }
+                }
+            }
+
+            return {valid: true};
+        }
+
+        function startTimer() {
+            stopTimer();
+            startTime = Date.now();
+            timerInterval = setInterval(updateTimer, 1000);
+            updateTimer();
+        }
+
+        function stopTimer() {
+            if (timerInterval) {
+                clearInterval(timerInterval);
+                timerInterval = null;
+            }
+        }
+
+        function updateTimer() {
+            const elapsed = Math.floor((Date.now() - startTime) / 1000);
+            const minutes = Math.floor(elapsed / 60).toString().padStart(2, '0');
+            const seconds = (elapsed % 60).toString().padStart(2, '0');
+            document.getElementById('timer').textContent = `${minutes}:${seconds}`;
+        }
+
+        // Initialize on load
+        window.onload = init;
+    </script>
+</body>
+</html>
